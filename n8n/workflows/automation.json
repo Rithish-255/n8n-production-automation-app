@@ -1,0 +1,120 @@
+{
+  "name": "Production Automation: Chrome + YouTube + ChatGPT + WhatsApp + Notes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "automation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 260]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "command", "value": "={{ $json.body.command }}" },
+            { "name": "prompt", "value": "={{ $json.body.prompt }}" },
+            { "name": "url", "value": "={{ $json.body.url }}" },
+            { "name": "searchQuery", "value": "={{ $json.body.searchQuery }}" },
+            { "name": "noteText", "value": "={{ $json.body.noteText }}" },
+            { "name": "whatsappTo", "value": "={{ $json.body.whatsappTo }}" },
+            { "name": "whatsappMessage", "value": "={{ $json.body.whatsappMessage }}" }
+          ]
+        }
+      },
+      "id": "set-vars",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [440, 260]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.command }}",
+              "rightValue": "chatgpt",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "switch-command",
+      "name": "Switch Command",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://app:3000/workflow/execute",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"command\": \"={{ $json.command }}\",\n  \"prompt\": \"={{ $json.prompt }}\",\n  \"url\": \"={{ $json.url }}\",\n  \"searchQuery\": \"={{ $json.searchQuery }}\",\n  \"noteText\": \"={{ $json.noteText }}\",\n  \"whatsappTo\": \"={{ $json.whatsappTo }}\",\n  \"whatsappMessage\": \"={{ $json.whatsappMessage }}\"\n}",
+        "options": {}
+      },
+      "id": "execute-service",
+      "name": "Execute Automation Service",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [980, 260]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1220, 260]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          { "node": "Set Variables", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          { "node": "Switch Command", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Switch Command": {
+      "main": [
+        [
+          { "node": "Execute Automation Service", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Execute Automation Service": {
+      "main": [
+        [
+          { "node": "Respond to Webhook", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
